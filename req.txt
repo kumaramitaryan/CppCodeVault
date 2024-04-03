@@ -1,0 +1,73 @@
+Problem Statement:
+
+Develop an application that would read files from the disk and return the data read. 
+Each line in the file will be containing one row of data from some table, separated by '|'. There are three parts of this application:
+
+1. CLI:
+
+a. start 
+This will create a daemon process which will act as a server on localhost.
+
+b. get <file name> <> <>
+get will request the server running on the host machine (which could be localhost or another machine) to display the contents of the file specified by file name. The file name could be one or more separated by a space.
+                                                                                                                                        
+c. stop {host ip}
+This will terminate the daemon process and any other child process running on the host.
+
+2. The Server (daemon process)
+This process will be running on the host (as specified in start command) and will be listening on a port. Once it gets the command "get <file names>" it will fork processes equal to number of files that it needs to read and will assign each process the task to read one file each. So if we have to read one file we will have one child, if we have to read 2 files we will have 2 child, each reading one file and so on.
+
+After forking, server's task will be to send the data back to the client. 
+
+The child processes will write the data read from the file into shared memory and the server will read from it and send it to the client. 
+
+The server will read it as the data is written and hence each write from the child has to be atomic. i.e each line read to should be written completely and should not be sent when only part of it is written. However it is ok if lines from different files appear together. i,e we could send the data as
+
+file1: line 1 
+file1: line 2
+file2: line 1
+file1: line 3
+file2: line 2 and so on
+
+Here we can assume that lines are rows of data and hence the above intermixing will not cause any issue.
+
+3. The Child
+The task of these processes would be to read the file assigned to it by the Server. It will read the file and put the data in the shared memory (shared between the server and the child). 
+
+The design to dictate how the child would put the data in memory would be flexible. One approach would be to maintain a buffer of say size 512bytes and put the data into shared memory only when this buffer is full. Here they will have to take care that 512 bytes includes complete row since half row cannot be written.
+
+While writing into shared memory lock will have to be acquired hence a buffer approach may help. However this will be left to the individual to decide and take a call as to how you would want to implement this part.  The server which will be reading the data may have to acquire lock as well.
+
+4. The implementation should take care of all kinds of exceptions.
+
+Enhancement (If you get time):
+1. Have the server accept multiple client connections.
+2. Use varied mechanism for client server communications like shared memory, pipes, unix domain sockets etc.
+3. Have start take an argument as host_ip. The server should be started on the machine specified by host_ip. If the argument is not provided localhost should be assumed.
+
+------------------------
+My Understanding :
+
+Server Side:
+
+1. Start the server as a daemon process on the specified host machine.
+2. Listen on a specific port [8080 for local], for incoming client connections.
+3. When a client connects, receive the command sent by the client.
+	If the command is "get <file names>", fork child processes equal to the number of files to be read.
+	Each child process reads its assigned file and writes the data into shared memory (shared between the child and the server).
+4.  The server reads from the shared memory and sends the data back to the client. 
+5.  Handle any exceptions or errors that may occur during the process.
+
+Client Side:
+
+
+1. Connect to the server running on the specified host machine.
+2. Send the desired command to the server, such as "get <file names>" to request file contents.
+3. Receive the data sent by the server and display it to the user.
+4. Handle any exceptions or errors that may occur during the process.
+
+Shared Memory Management:
+
+1. Create a shared memory segment that will be used by the child processes and the server to communicate.
+2.  shared memory may be Buffer to char array max size could be defined.
+

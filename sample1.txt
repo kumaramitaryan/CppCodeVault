@@ -1,0 +1,6 @@
+EMP ID  | Employee Name
+000 | Amit Kumar
+001 | Amit
+002 | Fuzzy
+003 | Softy
+004 | Minty
